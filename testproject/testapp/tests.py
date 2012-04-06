@@ -20,6 +20,7 @@ class SimpleTest(TestCase):
         regular_obj = RegularModel(name="bar", c=self.obj)
         regular_obj.save()
         self.reg_id = regular_obj.id
+        CachedModel.objects.clear_cache()
 
     def test_basic_caching(self):
         """
@@ -41,7 +42,7 @@ class SimpleTest(TestCase):
         #No queries will be excuted
         reg = RegularModel.objects.get(id=self.reg_id)
         self.assertNumQueries(0, lambda: reg.c )
-        self.assertEqual(reg.c, self.obj_id)
+        self.assertEqual(reg.c, self.obj)
 
 
 
