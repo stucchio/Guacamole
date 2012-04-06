@@ -47,7 +47,7 @@ def _caching_queryset_class(mgr):
     return CustomCachingQueryset
 
 class InMemoryCachingManager(models.Manager):
-    use_for_related_fields = True
+    use_for_related_fields = True #Use this manager even for foreign keys
 
     def __init__(self, *args, **kwargs):
         if kwargs.has_key('lookup_fields'):
