@@ -18,16 +18,17 @@ class _CachingQuerySet(QuerySet):
                 return kwargs[kw]
         return None
 
-    def __len__(self):
-        """ Because we've just received a chunk of objects from the database,
-        """
-        l = super(_CachingQuerySet, self).__len__()
-        if self._result_cache and (not hasattr(self, "_saved_result_cache")):
+    def _cache_objects_in_result_cache(self):
+        super(_CachingQuerySet, self).__len__() #This line might need to change with the implementation
+        if hasattr(self, "_result_cache") and self._result_cache and (not hasattr(self, "_saved_result_cache")):
             for obj in self._result_cache:
                 for f in self.manager.lookup_fields + ['pk']:
                     self.manager.cache[getattr(obj, f)] = obj
             self._saved_result_cache = True
-        return l
+
+    def __len__(self):
+        self._cache_objects_in_result_cache()
+        return super(_CachingQuerySet, self).__len__()
 
     def get(self, *args, **kwargs):
         lookup_field = self._get_lookup_field(*args, **kwargs)
@@ -49,27 +50,18 @@ class InMemoryCachingManager(models.Manager):
     use_for_related_fields = True
 
     def __init__(self, *args, **kwargs):
-        self.lookup_fields = kwargs.get("lookup_fields", [])
+        if kwargs.has_key('lookup_fields'):
+            self.lookup_fields = kwargs["lookup_fields"]
+            del kwargs['lookup_fields']
+        else:
+            self.lookup_fields = []
+
         self.cache = LRUCacheDict(max_size=kwargs.get("max_size", 1024), expiration=kwargs.get("expiration", 15*60))
-
         self.queryset_class = _caching_queryset_class(self)
-
         super(InMemoryCachingManager, self).__init__(*args, **kwargs)
 
     def get_query_set(self):
         return self.queryset_class(self.model)
-
-    def get(self, *args, **kwargs):
-        for field in self.lookup_fields:
-            if kwargs.has_key(field):
-                pk_id = kwargs[field]
-                try:
-                    return self.cache[pk_id]
-                except KeyError:
-                    result = super(InMemoryCachingManager, self).get(*args, **kwargs)
-                    self.cache[pk_id] = result
-                return result
-        return super(InMemoryCachingManager, self).get(*args, **kwargs)
 
     def clear_cache(self):
         self.cache.clear()
