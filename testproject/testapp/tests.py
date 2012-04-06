@@ -22,6 +22,12 @@ class SimpleTest(TestCase):
         self.reg_id = regular_obj.id
         CachedModel.objects.clear_cache()
 
+        self.many_set = []
+        for i in range(20):
+            c = CachedModel(name="many-" + str(i))
+            c.save()
+            self.many_set.append(c)
+
     def test_basic_caching(self):
         """
         Test that CachedModel.objects.get makes no sql query once the object is in cache.
@@ -32,6 +38,11 @@ class SimpleTest(TestCase):
         self.assertNumQueries(0, lambda: CachedModel.objects.get(id=self.obj_id) )
         self.assertEqual(self.obj, CachedModel.objects.get(id=self.obj_id) )
 
+    def test_caching_many(self):
+        self.assertNumQueries(1, lambda: list(CachedModel.objects.all()) )
+        #No queries will be excuted, since object is already in the cache
+        self.assertNumQueries(0, lambda: CachedModel.objects.get(id=self.obj_id) )
+
     def test_foreign_key_caching(self):
         """
         Test that foreign keys pointing to CachedModel objects makes no sql query once the object is in cache.
@@ -40,7 +51,7 @@ class SimpleTest(TestCase):
         reg = RegularModel.objects.get(id=self.reg_id)
         self.assertNumQueries(1, lambda: reg.c )
         #No queries will be excuted
-        reg = RegularModel.objects.get(id=self.reg_id)
+        reg = RegularModel.objects.get(id=self.reg_id) #Get a new RegularModel, since the old one will have the value cached by django's ordinary mechanism
         self.assertNumQueries(0, lambda: reg.c )
         self.assertEqual(reg.c, self.obj)
 

@@ -18,6 +18,17 @@ class _CachingQuerySet(QuerySet):
                 return kwargs[kw]
         return None
 
+    def __len__(self):
+        """ Because we've just received a chunk of objects from the database,
+        """
+        l = super(_CachingQuerySet, self).__len__()
+        if self._result_cache and (not hasattr(self, "_saved_result_cache")):
+            for obj in self._result_cache:
+                for f in self.manager.lookup_fields + ['pk']:
+                    self.manager.cache[getattr(obj, f)] = obj
+            self._saved_result_cache = True
+        return l
+
     def get(self, *args, **kwargs):
         lookup_field = self._get_lookup_field(*args, **kwargs)
         try:
