@@ -58,7 +58,7 @@ class SimpleTest(TestCase):
         self.assertNumQueries(0, lambda: Currency.objects.get(pk=self.obj_id) )
         self.assertEqual(self.obj, Currency.objects.get(pk=self.obj_id) )
 
-    def test_basic_caching3(self):
+    def test_basic_caching4(self):
         """
         Test that Currency.objects.get makes no sql query once the object is in cache.
         """
@@ -67,6 +67,15 @@ class SimpleTest(TestCase):
         #No queries will be excuted
         self.assertNumQueries(0, lambda: Currency.objects.get(name="foo") )
         self.assertEqual(self.obj, Currency.objects.get(name="foo") )
+
+    def test_basic_caching5(self):
+        """
+        Test that Currency.objects.get raises proper exception if nothing can be found
+        """
+        #1 query will be executed
+        self.assertNumQueries(1, lambda: Currency.objects.get(id=self.obj_id) )
+        #No queries will be excuted
+        self.assertRaises(Currency.DoesNotExist, lambda: Currency.objects.get(id=self.obj_id, name="nonexistent") )
 
     def test_caching_many(self):
         self.assertNumQueries(1, lambda: list(Currency.objects.all()) )
