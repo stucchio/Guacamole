@@ -15,7 +15,7 @@ With a view:
 
     def view(request):
         securities = Security.objects.filter(...)[0:50]
-	return render_to_response(...)
+        return render_to_response(...)
 
     <ul>
     {% for security in securities %}
