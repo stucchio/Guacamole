@@ -13,6 +13,8 @@ class _CachingQuerySet(QuerySet):
         self.lookup_query_keywords += self.manager.lookup_fields + [ field+"__exact" for field in self.manager.lookup_fields]
 
     def _get_lookup_field(self, *args, **kwargs):
+        if (len(args) != 0) or (len(kwargs) != 1):
+            return None
         for kw in self.lookup_query_keywords:
             if kwargs.has_key(kw):
                 return kwargs[kw]
@@ -32,12 +34,13 @@ class _CachingQuerySet(QuerySet):
 
     def get(self, *args, **kwargs):
         lookup_field = self._get_lookup_field(*args, **kwargs)
-        try:
-            return self.manager.cache[lookup_field]
-        except KeyError:
-            result = super(_CachingQuerySet, self).get(*args, **kwargs)
-            self.manager.cache[lookup_field] = result
-            return result
+        if lookup_field: #In this case, we can probably find in the cache
+            try:
+                return self.manager.cache[lookup_field]
+            except KeyError:
+                result = super(_CachingQuerySet, self).get(*args, **kwargs)
+                self.manager.cache[lookup_field] = result
+                return result
         return super(_CachingQuerySet, self).get(*args, **kwargs)
 
 
