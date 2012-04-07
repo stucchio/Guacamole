@@ -38,7 +38,7 @@ With Guacamole, the code could be modified as follows:
     class Currency(models.Model):
         name = models.CharField(max_length=256)
 
-	objects = InMemoryCachingManager()
+        objects = InMemoryCachingManager()
 
     class Security(models.Model):
         name = models.CharField(max_length=256)
