@@ -49,18 +49,21 @@ def _caching_queryset_class(mgr):
         manager = mgr
     return CustomCachingQueryset
 
+def _del_keys(dictionary, keys):
+    for k in keys:
+        if dictionary.has_key(k):
+            del dictionary[k]
+
 class InMemoryCachingManager(models.Manager):
     use_for_related_fields = True #Use this manager even for foreign keys
 
     def __init__(self, *args, **kwargs):
-        if kwargs.has_key('lookup_fields'):
-            self.lookup_fields = kwargs["lookup_fields"]
-            del kwargs['lookup_fields']
-        else:
-            self.lookup_fields = []
-
+        self.lookup_fields = kwargs.get('lookup_fields', [])
         self.cache = LRUCacheDict(max_size=kwargs.get("max_size", 1024), expiration=kwargs.get("expiration", 15*60))
+        _del_keys(kwargs, ['max_size', 'expiration', 'lookup_fields'] )
+
         self.queryset_class = _caching_queryset_class(self)
+
         super(InMemoryCachingManager, self).__init__(*args, **kwargs)
 
     def get_query_set(self):
