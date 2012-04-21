@@ -10,6 +10,7 @@ from django.db import connection
 from django import db
 from models import *
 
+import pickle
 
 class SimpleTest(TestCase):
     def setUp(self):
@@ -99,5 +100,8 @@ class SimpleTest(TestCase):
         #One query will be excuted, since Security does not use the InMemoryCachingManager
         self.assertNumQueries(1, lambda: Security.objects.get(id=self.reg_id) )
 
-
+    def test_pickle(self):
+        qs = Currency.objects.all()
+        unpickled = pickle.loads(pickle.dumps(qs))
+        self.assertItemsEqual(qs, unpickled)
 
